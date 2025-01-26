@@ -28,26 +28,26 @@ pub mod anchor_vault {
 }
 
 
-#[derive(Accounts)]
-pub struct Initialize<'info> {
-    #[account(mut)]
-    pub user: Signer<'info>,
-    #[account(
-        init,
-        payer = user,
-        seeds = [b"state", user.key().as_ref()],
-        bump,
-        space = 8 + 1 + 1
-    )]
-    pub state: Account<'info, VaultState>,
-    #[account(
-        mut,
-        seeds = [b"vault", user.key().as_ref()],
-        bump
-    )]
-    pub vault: SystemAccount<'info>,
-    pub system_program: Program<'info, System>
-}
+	#[derive(Accounts)]
+	pub struct Initialize<'info> {
+		#[account(mut)]
+		pub user: Signer<'info>,
+		#[account(
+			init,
+			payer = user,
+			seeds = [b"state", user.key().as_ref()],
+			bump,
+			space = 8 + 1 + 1
+		)]
+		pub state: Account<'info, VaultState>,
+		#[account(
+			mut,
+			seeds = [b"vault", user.key().as_ref()],
+			bump
+		)]
+		pub vault: SystemAccount<'info>,
+		pub system_program: Program<'info, System>
+	}
 
 impl<'info> Initialize<'info> {
     pub fn initialize(&mut self, bumps: &InitializeBumps) -> Result<()> {
@@ -63,7 +63,7 @@ pub struct Payments<'info> {
     pub user: Signer<'info>,
     #[account( seeds = [b"state", user.key().as_ref()], bump = state.state_bump)]
     pub state: Account<'info, VaultState>,
-    #[account( seeds = [b"vault", state.key().as_ref()], bump = state.vault_bump)]
+    #[account( mut, seeds = [b"vault", user.key().as_ref()], bump = state.vault_bump)]
     pub vault: SystemAccount<'info>,
     pub system_program: Program<'info, System>
 }
@@ -94,7 +94,7 @@ impl<'info> Payments<'info> {
 
         let signer_seeds: [&[&[u8]]; 1] = [&[
             b"vault",
-            self.state.to_account_info().key.as_ref(),
+            self.user.to_account_info().key.as_ref(),
             &[self.state.vault_bump]
         ]];
 
@@ -111,7 +111,7 @@ pub struct Close<'info> {
     pub user: Signer<'info>,
     #[account(mut, seeds = [b"state", user.key().as_ref()], bump = state.state_bump, close = user)]
     pub state: Account<'info, VaultState>,
-    #[account( seeds = [b"vault", state.key().as_ref()], bump = state.vault_bump)]
+    #[account(mut, seeds = [b"vault", user.key().as_ref()], bump = state.vault_bump)]
     pub vault: SystemAccount<'info>,
     pub system_program: Program<'info, System>
 }
@@ -128,8 +128,8 @@ impl<'info> Close<'info> {
         };
 
         let signer_seeds: [&[&[u8]]; 1] = [&[
-            b"state",
-            self.state.to_account_info().key.as_ref(),
+            b"vault",
+            self.user.to_account_info().key.as_ref(),
             &[self.state.vault_bump]
         ]];
 
